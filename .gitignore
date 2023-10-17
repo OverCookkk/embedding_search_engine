@@ -30,3 +30,6 @@ model/
 *.zip
 
 reverse_image_search/data/
+
+text_image_search/data/
+deploy/
