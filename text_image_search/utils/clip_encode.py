@@ -22,7 +22,7 @@ class CnClipEncodeModel:
         return image_features.cpu().numpy()[0]  # [1, 1024]
 
     def extract_text_features(self, text):
-        text_data = clip.tokenize(text).to(device)
+        text_data = clip.tokenize([text]).to(device)
         with torch.no_grad():
             text_features = self.model.encode_text(text_data)
             text_features /= text_features.norm(dim=-1, keepdim=True)

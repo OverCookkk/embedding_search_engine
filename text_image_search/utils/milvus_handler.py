@@ -28,10 +28,11 @@ class MilvusHandler:
         try:
             # 如果存在就使用，不存在则创建collection，并创建索引
             if not utility.has_collection(collection_name):
-                field1 = FieldSchema(name="id", dtype=DataType.INT64, is_primary=True)  # 如果主键设置自增auto_id=True，则会不需要插入
+                field1 = FieldSchema(name="id", dtype=DataType.INT64, is_primary=True)  # 必须要有一个主键，如果主键设置自增auto_id=True，则该字段不需要插入
                 field2 = FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, description="float vector",
                                      dim=VECTOR_DIMENSION, is_primary=False)
-                schema = CollectionSchema(fields=[field1, field2], description="collection description")
+                field3 = FieldSchema(name="label", dtype=DataType.VARCHAR, max_length=1000, description="image label", is_primary=False)
+                schema = CollectionSchema(fields=[field1, field2, field3], description="collection description")
                 self.collection = Collection(name=collection_name, schema=schema)
                 self.create_index(collection_name)
             else:
@@ -50,20 +51,36 @@ class MilvusHandler:
         else:
             raise Exception(status.message)
 
-    def insert(self, collection_name, mId, vectors):
+    # 插入，不能覆盖
+    def insert(self, collection_name, mIds, vectors, labels):
+        LOGGER.debug(f"insert milvus, mIds:{mIds}")
         try:
             self.set_collection(collection_name)
-            data = [mId, vectors]  # data:二维数组
+            data = [mIds, vectors, labels]  # data:二维数组
             milvus_result = self.collection.insert(data)
-            LOGGER.debug(f"Insert rows: {milvus_result.insert_count} ")
             # self.collection.flush()  # The flush call will seal any remaining segments and send them for indexing
             self.collection.load()  # 当创建一个集合后，它默认处于未加载状态。通过调用collection.load()方法，你可以将集合加载到内存中，以便进行查询和其他操作
 
             ids = milvus_result.primary_keys
-            LOGGER.debug(f"Insert vectors to Milvus in collection: {collection_name} with {len(vectors)} rows")
+            LOGGER.debug(f"Insert vectors to Milvus in collection: {collection_name} with {milvus_result.insert_count} rows")
             return ids
         except Exception as e:
             LOGGER.error(f"Failed to insert data into Milvus: {e}")
+
+    # 存在就覆盖，不存在就插入
+    def upsert(self, collection_name, mIds, vectors, labels):
+        LOGGER.debug(f"upsert milvus, mIds:{mIds}")
+        try:
+            self.set_collection(collection_name)
+            data = [mIds, vectors, labels]
+            # LOGGER.debug(f"data: {data}")
+            res = self.collection.upsert(data)
+            self.collection.load()
+            LOGGER.debug(f"Successfully search in collection: {res}")
+            return res
+        except Exception as e:
+            LOGGER.error(f"Failed to upsert in Milvus: {e}")
+            sys.exit(1)
 
     def count(self, collection_name):
         # Get the number of milvus collection
@@ -86,15 +103,4 @@ class MilvusHandler:
             return res
         except Exception as e:
             LOGGER.error(f"Failed to search in Milvus: {e}")
-            sys.exit(1)
-
-    def upsert(self, collection_name, mId, vectors):
-        try:
-            self.set_collection(collection_name)
-            data = [mId, vectors]
-            res = self.collection.upsert(data)
-            LOGGER.debug(f"Successfully search in collection: {res}")
-            return res
-        except Exception as e:
-            LOGGER.error(f"Failed to upsert in Milvus: {e}")
             sys.exit(1)
