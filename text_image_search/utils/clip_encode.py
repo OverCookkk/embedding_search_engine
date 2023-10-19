@@ -2,6 +2,7 @@ import torch
 import cn_clip.clip as clip
 from cn_clip.clip import load_from_name, available_models
 from PIL import Image
+from logs import LOGGER
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

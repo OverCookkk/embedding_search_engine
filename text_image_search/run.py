@@ -14,10 +14,10 @@ from service.search import do_search
 
 from config import MILVUS_HOST, MILVUS_PORT
 
-MYSQL_HOST = "172.31.61.41"
-MYSQL_USER = "hwdata"
+MYSQL_HOST = ""
+MYSQL_USER = ""
 MYSQL_PORT = 3306
-MYSQL_PWD = "Pass4dat@2018!0"
+MYSQL_PWD = ""
 MYSQL_DB = "test"
 
 app = FastAPI()
@@ -60,7 +60,7 @@ async def store(collection_name: str = None):
 #         return {'status': -1, 'msg': e}, 400
 #
 @app.get('/search')
-def search_text(table_name: str = None, query_sentence:str = None):
+def search(table_name: str = None, query_sentence:str = None):
     try:
         _, image_paths, labels, distances = do_search(table_name, query_sentence, milvus_client, mysql_client, encode_model)
         res = []
@@ -82,4 +82,4 @@ if __name__ == '__main__':
     # for i in range(len(paths)):
     #     features.append(encode_model.extract_image_features(paths[i]))
     # LOGGER.debug(f"features len :{len(features)}")
-    uvicorn.run(app=app, host='172.31.175.230', port=8010)
+    uvicorn.run(app=app, host='127.0.0.1', port=8010)

@@ -44,7 +44,6 @@ def do_store(collection_name, file_dir, milvus_client, mysql_client, encode_mode
         df = pd.read_csv(file_dir)    # ./data/reverse_image_search - bak.csv
         paths = df['path'].tolist()
         labels = df['label'].tolist()
-        # milvus_client.
         features = []
         for i in range(len(paths)):
             features.append(encode_model.extract_image_features(paths[i]))
